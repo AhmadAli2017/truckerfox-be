@@ -1,0 +1,26 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/ea5e1z5mh17s/dev.truckerfox.com"
+PassengerBaseURI "/dev"
+PassengerNodejs "/home/ea5e1z5mh17s/nodevenv/dev.truckerfox.com/10/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+PassengerAppLogFile "/home/ea5e1z5mh17s/logs/dev.truckerfox.com"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
+<IfModule Litespeed>
+SetEnv APP_URL https://backend.truckerfox.com/dev
+SetEnv BASE_URL /api
+SetEnv DB_DIALECT mysql
+SetEnv DB_HOST localhost
+SetEnv DB_NAME ea5e1z5mh17s_trucker_fox
+SetEnv DB_PASS RnNgPn3Rq9g5
+SetEnv DB_USER ea5e1z5mh17s_trucker_fox
+SetEnv FCM_SERVER_KEY AAAAoWR-r6w:APA91bGkh6XiJvpoGDCWFzU7vb5y4zn3johquP7YMoTVaBFy-AIIUiiF4iL3fF2PPUGq4JVsDwgqa8CLv4bdqjdhGQEzNDXmlJqkNNeiXJ2VMy3jq9lTfWpoIXHW-FTkiw0RZts3kjdl
+SetEnv JWT_SECRET trucker_fox_jwt_secret
+SetEnv MAIL_HOST mail.truckerfox.com
+SetEnv MAIL_PASS hr2UJR1a-C)_
+SetEnv MAIL_PORT 465
+SetEnv MAIL_USER updates@truckerfox.com
+SetEnv PORT 8000
+</IfModule>
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END
