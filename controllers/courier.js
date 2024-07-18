@@ -5,7 +5,7 @@ const {
   msToTime,
   sendEmail,
   getStatus,
-  sendEmailWithAttachments
+  sendEmailWithAttachments,
 } = require("../utils/helpers");
 const cron = require("node-cron");
 
@@ -16,26 +16,32 @@ let addLoadStartTime, addLoadJob, updateLoadStartTime;
 
 exports.get = async (req, res, next) => {
   const id = req.userId;
-//   const dt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+  //   const dt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 
   try {
     const courierHandler = await CourierHandler.findAll({
       where: { userId: id },
       order: [["createdAt", "desc"]],
     });
-    let pending = []
-    let completed = []
+    let pending = [];
+    let completed = [];
     for (const item of courierHandler) {
       const courier = await Courier.findOne({
-        where: { [Op.and]: [{ courierHandlerId: item.id }, { status: 13 }, { isCompleted: 1 }] }
-      })
+        where: {
+          [Op.and]: [
+            { courierHandlerId: item.id },
+            { status: 13 },
+            { isCompleted: 1 },
+          ],
+        },
+      });
       if (courier) {
-        completed.push(item)
+        completed.push(item);
       } else {
-        pending.push(item)
+        pending.push(item);
       }
     }
-    res.status(200).json({pending,completed});
+    res.status(200).json({ pending, completed });
   } catch (error) {
     next(error);
   }
@@ -48,7 +54,7 @@ exports.search_load_web = async (req, res, next) => {
       where: {
         [Op.and]: [{ name: company_name }, { loadNumber: load_number }],
       },
-      include: ["user", "bols", "couriers","rateCon"],
+      include: ["user", "bols", "couriers", "rateCon"],
       order: [["couriers", "status", "asc"]],
     });
 
@@ -64,7 +70,7 @@ exports.search_load_web = async (req, res, next) => {
 
 exports.search_load = async (req, res, next) => {
   try {
-    const id = req.userId;
+    const id = req.body.userId;
     const { company_name, load_number } = req.body;
     const data = await CourierHandler.findOne({
       where: {
@@ -188,56 +194,61 @@ exports.update = async (req, res, next) => {
       include: ["couriers", "user"],
       order: [["couriers", "status", "asc"]],
     });
-    let recipients = []
+    let recipients = [];
     if (rateCon.brokerEmail) {
-      recipients.push(rateCon.brokerEmail)
+      recipients.push(rateCon.brokerEmail);
     }
     if (rateCon.email2) {
-      recipients.push(rateCon.email2)
+      recipients.push(rateCon.email2);
     }
     if (rateCon.email3) {
-      recipients.push(rateCon.email3)
+      recipients.push(rateCon.email3);
     }
     if (rateCon.email4) {
-      recipients.push(rateCon.email4)
+      recipients.push(rateCon.email4);
     }
     if (rateCon.email5) {
-      recipients.push(rateCon.email5)
+      recipients.push(rateCon.email5);
     }
-    if (!load.isCompleted ) {
-    const bol = await Bol.findOne({
-      where: { courierHandlerId: rateCon.courierHandlerId }
-    })
-    if ( bol && recipients.length > 0 && status === 13 && rateCon.send_files_to_email  ) {
-     
-      sendEmailWithAttachments(recipients, {
-        status: getStatus(status - 1),
-        loadNumber: loadHandler.loadNumber,
-        name: loadHandler.user.name,
-        l_name: loadHandler.user.l_name,
-        phoneNumber: loadHandler.user.phone,
-      },
-        bol ? bol.name : 'none',
-      );
+    if (!load.isCompleted) {
+      const bol = await Bol.findOne({
+        where: { courierHandlerId: rateCon.courierHandlerId },
+      });
+      if (
+        bol &&
+        recipients.length > 0 &&
+        status === 13 &&
+        rateCon.send_files_to_email
+      ) {
+        sendEmailWithAttachments(
+          recipients,
+          {
+            status: getStatus(status - 1),
+            loadNumber: loadHandler.loadNumber,
+            name: loadHandler.user.name,
+            l_name: loadHandler.user.l_name,
+            phoneNumber: loadHandler.user.phone,
+          },
+          bol ? bol.name : "none"
+        );
+      } else if (recipients.length > 0) {
+        sendEmail(recipients, {
+          status: getStatus(status - 1),
+          loadNumber: loadHandler.loadNumber,
+          name: loadHandler.user.name,
+          l_name: loadHandler.user.l_name,
+          phoneNumber: loadHandler.user.phone,
+        });
+      }
     } else if (recipients.length > 0) {
       sendEmail(recipients, {
-        status: getStatus(status - 1),
+        status: getStatus(status - 2),
         loadNumber: loadHandler.loadNumber,
         name: loadHandler.user.name,
         l_name: loadHandler.user.l_name,
         phoneNumber: loadHandler.user.phone,
       });
     }
-  } else if (recipients.length > 0) {
-    sendEmail(recipients, {
-      status: getStatus(status - 2),
-      loadNumber: loadHandler.loadNumber,
-      name: loadHandler.user.name,
-      l_name: loadHandler.user.l_name,
-      phoneNumber: loadHandler.user.phone,
-    });
-  }
-
 
     res.status(200).json(loadHandler);
   } catch (error) {

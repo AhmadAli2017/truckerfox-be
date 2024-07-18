@@ -1,12 +1,40 @@
 const { Op } = require("sequelize");
-const { CourierHandler, User, RateCon, Courier, Bol,Company } = require("../models");
+const {
+  CourierHandler,
+  User,
+  RateCon,
+  Courier,
+  Bol,
+  Company,
+} = require("../models");
 const { sendNotification } = require("../utils/helpers");
-const { sendEmail,sendRateConEmail } = require('../utils/helpers')
+const { sendEmail, sendRateConEmail } = require("../utils/helpers");
+
+function makeUrlFriendly(string) {
+  return string
+    .replace(/\s+/g, "-") // Replace spaces with dashes
+    .replace(/[()]/g, "") // Remove parentheses
+    .replace(/[^a-zA-Z0-9\-\.\/:?]/g, "") // Remove non-ASCII characters, preserve colons and question marks
+    .toLowerCase(); // Convert to lowercase
+}
 
 exports.addRateCon = async (req, res, next) => {
-  const { broker, loadNumber, driver, email, email2, email3, email4, email5, document, send_files_to_email,merge_rate_and_bol, notes,mcNumber } = req.body;
+  const {
+    broker,
+    loadNumber,
+    driver,
+    email,
+    email2,
+    email3,
+    email4,
+    email5,
+    document,
+    send_files_to_email,
+    merge_rate_and_bol,
+    notes,
+    mcNumber,
+  } = req.body;
   const id = req.userId;
-
 
   const statuses = [
     { status: 1, isCompleted: true, statusUpdatedAt: new Date() },
@@ -25,110 +53,117 @@ exports.addRateCon = async (req, res, next) => {
   ];
 
   try {
-      const company = await Company.findOne({where : {mcNumber}})
-  if(company.assigned_count >= company.limit){
-      res.status(400).json({ message: "Max loads limit reached! Please upgrade your subscription" });
-  } else {
-    const driverData = await User.findOne({ where: { id: driver } });
-    
-    const handler = await CourierHandler.findOne({
-      where: { [Op.and]: [{ name: broker, loadNumber }] },
-    });
-
-    if (handler) {
-      res.status(400).json({ message: "Load already exists." });
+    const company = await Company.findOne({ where: { mcNumber } });
+    if (company.assigned_count >= company.limit) {
+      res
+        .status(400)
+        .json({
+          message: "Max loads limit reached! Please upgrade your subscription",
+        });
     } else {
-      const newHandler = await CourierHandler.create({
-        userId: driver,
-        name: broker,
-        loadNumber,
+      const driverData = await User.findOne({ where: { id: driver } });
+
+      const handler = await CourierHandler.findOne({
+        where: { [Op.and]: [{ name: broker, loadNumber }] },
       });
 
+      if (handler) {
+        res.status(400).json({ message: "Load already exists." });
+      } else {
+        const newHandler = await CourierHandler.create({
+          userId: driver,
+          name: broker,
+          loadNumber,
+        });
 
-      const status = statuses.map((item) => {
-        item.courierHandlerId = newHandler.id;
-        return item;
-      });
-      await Courier.bulkCreate(status);
-      const con = await RateCon.create({
-        courierHandlerId: newHandler.id,
-        userId: driver,
-        document,
-        companyId: id,
-        brokerEmail: email,
-        email2: email2,
-        email3: email3,
-        email4: email4,
-        email5: email5,
-        send_files_to_email: send_files_to_email,
-        merge_rate_and_bol:merge_rate_and_bol,
-        notes : notes,
-      });
-      const newRateCon = await RateCon.findByPk(con.id, {
-        include: [
-          { model: User, as: "user", attributes: ["name"] },
-          {
-            model: CourierHandler,
-            as: "courierHandler",
-            attributes: ["name", "loadNumber"],
-          },
-        ],
-        attributes: ["id", "document"],
-      });
-      let recipients = []
-      if(email){
-          recipients.push(email)
-      }
-      if(email2){
-          recipients.push(email2)
-      }
-      if(email3){
-          recipients.push(email3)
-      }
-      if(email4){
-          recipients.push(email4)
-      }
-      if(email5){
-          recipients.push(email5)
-      }
-      await sendEmail(recipients, {
-        status: "Rate sheet received & accepted",
-        loadNumber: loadNumber,
-        name: driverData.name,
-        l_name: driverData.l_name,
-        phoneNumber: driverData.phone,
-      });
-      setTimeout(
-      async ()=>{
-          await sendRateConEmail(driverData.email, {
-        status: "Rate sheet attached",
-        loadNumber: loadNumber,
-        name: driverData.name,
-        l_name: driverData.l_name,
-        phoneNumber: driverData.phone,
-      } , document);
-      }, 60000);
-      await sendNotification(
-        driverData.fcm,
-        {
-          title: "⏰ Reminder!!!",
-          body: "Hey! Your next load is ready. Click to view rate confirmation",
-        },
-        {
-          id: newHandler.id,
+        const status = statuses.map((item) => {
+          item.courierHandlerId = newHandler.id;
+          return item;
+        });
+
+        document = makeUrlFriendly(document);
+
+        await Courier.bulkCreate(status);
+        const con = await RateCon.create({
+          courierHandlerId: newHandler.id,
+          userId: driver,
+          document,
+          companyId: id,
+          brokerEmail: email,
+          email2: email2,
+          email3: email3,
+          email4: email4,
+          email5: email5,
+          send_files_to_email: send_files_to_email,
+          merge_rate_and_bol: merge_rate_and_bol,
+          notes: notes,
+        });
+        const newRateCon = await RateCon.findByPk(con.id, {
+          include: [
+            { model: User, as: "user", attributes: ["name"] },
+            {
+              model: CourierHandler,
+              as: "courierHandler",
+              attributes: ["name", "loadNumber"],
+            },
+          ],
+          attributes: ["id", "document"],
+        });
+        let recipients = [];
+        if (email) {
+          recipients.push(email);
         }
-      );
-      console.log("Notification sent to " + driverData.fcm);
-    
+        if (email2) {
+          recipients.push(email2);
+        }
+        if (email3) {
+          recipients.push(email3);
+        }
+        if (email4) {
+          recipients.push(email4);
+        }
+        if (email5) {
+          recipients.push(email5);
+        }
+        await sendEmail(recipients, {
+          status: "Rate sheet received & accepted",
+          loadNumber: loadNumber,
+          name: driverData.name,
+          l_name: driverData.l_name,
+          phoneNumber: driverData.phone,
+        });
+        setTimeout(async () => {
+          await sendRateConEmail(
+            driverData.email,
+            {
+              status: "Rate sheet attached",
+              loadNumber: loadNumber,
+              name: driverData.name,
+              l_name: driverData.l_name,
+              phoneNumber: driverData.phone,
+            },
+            document
+          );
+        }, 60000);
+        await sendNotification(
+          driverData.fcm,
+          {
+            title: "⏰ Reminder!!!",
+            body: "Hey! Your next load is ready. Click to view rate confirmation",
+          },
+          {
+            id: newHandler.id,
+          }
+        );
+        console.log("Notification sent to " + driverData.fcm);
 
-   
-    let new_value = company.assigned_count + 1
- 
-    await company.update({assigned_count : new_value})
-    
-      res.status(200).json(newRateCon);
+        let new_value = company.assigned_count + 1;
+
+        await company.update({ assigned_count: new_value });
+
+        res.status(200).json(newRateCon);
+      }
     }
-  }
   } catch (error) {
     next(error);
   }
