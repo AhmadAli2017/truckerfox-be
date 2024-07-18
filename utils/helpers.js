@@ -75,21 +75,21 @@ exports.msToTime = (ms) => {
 
 exports.sendEmail = (to, data) => {
   const transporter = nodemailer.createTransport({
-    host: variables.MAIL_HOST,
-    port: variables.MAIL_PORT,
-    secure: true,
-    tls: {
-      rejectUnauthorized: false,
-    },
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT,
+    secure: false, // true for 465, false for other ports
     auth: {
-      user: variables.MAIL_USER,
-      pass: variables.MAIL_PASS,
+      user: process.env.MAIL_USERNAME, // your Gmail account
+      pass: process.env.MAIL_PASSWORD, // your Gmail password or app-specific password
     },
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 
   transporter
     .sendMail({
-      from: '"TruckerFox" <updates@truckerfox.com>',
+      from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
       to,
       subject: "TruckerFox Load Update",
       html: `
@@ -138,16 +138,16 @@ transporter
 
 exports.sendEmailWithAttachments = async (to, data, bol) => {
   const transporter = nodemailer.createTransport({
-    host: "mail.truckerfox.com",
-    port: 465,
-    secure: true,
-    tls: {
-      rejectUnauthorized: false,
-    },
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT,
+    secure: false,
     auth: {
-      user: "updates@truckerfox.com",
-      pass: "hr2UJR1a-C)_",
+      user: process.env.MAIL_USERNAME, // your Gmail account
+      pass: process.env.MAIL_PASSWORD, // your Gmail password or app-specific password
     },
+    tls: {
+      rejectUnauthorized: false
+    }
   });
   const attachments = [{
       filename: 'Bol.pdf',
@@ -157,7 +157,7 @@ exports.sendEmailWithAttachments = async (to, data, bol) => {
 
   await transporter
     .sendMail({
-      from: '"TruckerFox" <updates@truckerfox.com>',
+      from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
       to,
       subject: "BOL File Attached",
       html: `
