@@ -5,6 +5,7 @@ const nodemailer = require("nodemailer");
 const fs = require('fs')
 const variables = require("./variables");
 
+
 exports.hashPassword = async (pass) => {
   const hashed = await bcrypt.hash(pass, 12);
 
@@ -75,12 +76,12 @@ exports.msToTime = (ms) => {
 
 exports.sendEmail = (to, data) => {
   const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: process.env.MAIL_PORT,
+    host: variables.MAIL_HOST,
+    port: variables.MAIL_PORT,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: process.env.MAIL_USERNAME, // your Gmail account
-      pass: process.env.MAIL_PASSWORD, // your Gmail password or app-specific password
+      user: variables.MAIL_USER, // your Gmail account
+      pass: variables.MAIL_PASS, // your Gmail password or app-specific password
     },
     tls: {
       rejectUnauthorized: false
@@ -89,7 +90,7 @@ exports.sendEmail = (to, data) => {
 
   transporter
     .sendMail({
-      from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
+      from: `"${variables.MAIL_FROM_NAME}" <${variables.MAIL_FROM_ADDRESS}>`,
       to,
       subject: "TruckerFox Load Update",
       html: `
@@ -138,12 +139,12 @@ transporter
 
 exports.sendEmailWithAttachments = async (to, data, bol) => {
   const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: process.env.MAIL_PORT,
+    host: variables.MAIL_HOST,
+    port: variables.MAIL_PORT,
     secure: false,
     auth: {
-      user: process.env.MAIL_USERNAME, // your Gmail account
-      pass: process.env.MAIL_PASSWORD, // your Gmail password or app-specific password
+      user: variables.MAIL_USER, // your Gmail account
+      pass: variables.MAIL_PASS, // your Gmail password or app-specific password
     },
     tls: {
       rejectUnauthorized: false
@@ -157,7 +158,7 @@ exports.sendEmailWithAttachments = async (to, data, bol) => {
 
   await transporter
     .sendMail({
-      from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
+      from: `"${variables.MAIL_FROM_NAME}" <${variables.MAIL_FROM_ADDRESS}>`,
       to,
       subject: "BOL File Attached",
       html: `
