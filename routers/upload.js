@@ -17,8 +17,8 @@ router.post(
 
 router.post(
   "/rate-con",
-//   authMiddleware.verify,
-  uploadRateCon.array('image',5),
+  //   authMiddleware.verify,
+  uploadRateCon.array("image", 5),
   uploadController.rateCon
 );
 
